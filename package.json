@@ -1,0 +1,22 @@
+{
+  "name": "javascript-typescript-essential",
+  "version": "1.0.0",
+  "description": "자바스크립트와 타입스크립트로 해커 뉴스앱 만들기",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rondido/javascript-TypeScript-Essential.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rondido/javascript-TypeScript-Essential/issues"
+  },
+  "homepage": "https://github.com/rondido/javascript-TypeScript-Essential#readme",
+  "devDependencies": {
+    "parcel": "^2.7.0"
+  }
+}
