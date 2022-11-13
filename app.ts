@@ -1,17 +1,35 @@
 type Store = {
   currentPage : number;
-  feeds: newsFeed[];
+  feeds: NewsFeed[];
 }
 
-type newsFeed = {
+type News = {
   id:number;
-  comments_count :number;
+  time_ago:string;
+  title:string;
   url:string;
   user:string;
-  time_ago:string;
+  content:string;
+}
+
+//해당 뉴스에 대한 타입
+//& news type과 합쳐진다.
+type NewsFeed  = News & {
+  comments_count :number;
   points:number;  
-  title: string;
   read?:boolean;
+}
+
+
+// 해당 뉴스를 클릭 한 후 내용에 대한 타입
+type newsDetail = News &{
+ 
+  comments:NewsComment[];
+}
+
+type NewsComment = News & { 
+  comments:NewsComment[];
+  level:number;
 }
 
 
@@ -28,14 +46,14 @@ const store:Store = {
 };
 
 
-function getData(url) {
+function getData<ajaxResponse>(url:string) : ajaxResponse {
   ajax.open("GET", url, false);
   ajax.send();
 
   return JSON.parse(ajax.response);
 }
 
-function makeFeeds(feeds) {
+function makeFeeds(feeds: NewsFeed[]) : NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
@@ -43,7 +61,7 @@ function makeFeeds(feeds) {
 }
 
 
-function updateView(html){
+function updateView(html:string): void{
   if(container !== null){
     container.innerHTML = html;
   }else  console.error("최상위 컨테이너가 없다.");
@@ -51,8 +69,8 @@ function updateView(html){
 }
 
 // 메인화면
-function newsFeed() {
-  let newsFeed : newsFeed[] = store.feeds;
+function newsFeed() :void {
+  let newsFeed : NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
   <div class="bg-gray-600 min-h-screen">
@@ -79,7 +97,7 @@ function newsFeed() {
   </div>
   `;
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
   }
   for (let i = (store.currentPage - 1) * 5; i < store.currentPage * 5; i++) {
     newsList.push(`
@@ -109,16 +127,16 @@ function newsFeed() {
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   template = template.replace(
     "{{__prev_page__}}",
-    store.currentPage > 1 ? store.currentPage - 1 : 1
+    String(store.currentPage > 1 ? store.currentPage - 1 : 1)
   );
-  template = template.replace("{{__next_page__}}", store.currentPage + 1);
+  template = template.replace("{{__next_page__}}", String(store.currentPage + 1));
   updateView(template);
 
 }
 //목록
-function newsDetail() {
+function newsDetail():void {
   const id = location.hash.substr(7);
-  const newsContent = getData(CONTENT_URL.replace("@id", id));
+  const newsContent = getData<newsDetail>(CONTENT_URL.replace("@id", id));
   let template = `
   <div class="bg-gray-600 min-h-screen pb-8">
     <div class="bg-white text-xl">
@@ -153,30 +171,7 @@ function newsDetail() {
       break;
     }
   }
-  function makeComment(comments, called = 0) {
-    const commentString = [];
 
-    for (let i = 0; i < comments.length; i++) {
-      commentString.push(`
-      <div style="padding-left: ${called * 40}px;" class="mt-4">
-        <div class="text-gray-400">
-          <i class="fa fa-sort-up mr-2"></i>
-          <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-        </div>
-        <p class="text-gray-700">${comments[i].content}</p>
-      </div>      
-    `);
-
-      if (comments[i].comments.length > 0) {
-        commentString.push(makeComment(comments[i].comments, called + 1));
-      }
-      if (comments[i].length > 0) {
-        commentString.push(makeComment(comments[i].comments));
-      }
-    }
-
-    return commentString.join("");
-  }
 
   updateView( template.replace(
     "{{__comments__}}",
@@ -184,7 +179,31 @@ function newsDetail() {
   ));
 
 }
-function router() {
+function makeComment(comments:NewsComment[]): string {
+  const commentString = [];
+
+  for (let i = 0; i < comments.length; i++) {
+    const comment : NewsComment = comments[i];
+    commentString.push(`
+    <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
+      <div class="text-gray-400">
+        <i class="fa fa-sort-up mr-2"></i>
+        <strong>${comment.user}</strong> ${comment.time_ago}
+      </div>
+      <p class="text-gray-700">${comment.content}</p>
+    </div>      
+  `);
+
+    if (comment.comments.length > 0) {
+      commentString.push(makeComment(comment.comments));
+    }
+    
+  }
+
+  return commentString.join("");
+}
+
+function router():void {
   const routePath = location.hash;
 
   if (routePath === "") {
