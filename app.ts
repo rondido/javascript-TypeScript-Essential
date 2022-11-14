@@ -44,13 +44,35 @@ const store:Store = {
   feeds: [],
 };
 
+class Api {
+  url : string;  
+  ajax: XMLHttpRequest;
+  constructor(url: string){
+    this.url = url;
+    this.ajax = new XMLHttpRequest();
+  }
 
-function getData<ajaxResponse>(url:string) : ajaxResponse {
-  ajax.open("GET", url, false);
-  ajax.send();
-
-  return JSON.parse(ajax.response);
+  protected getRequest<ajaxResponse>(): ajaxResponse{
+    this.ajax.open("GET", this.url, false);
+    this.ajax.send();
+  
+    return JSON.parse(this.ajax.response);
+  }
 }
+
+class NewsFeedApi extends Api{
+  getData(): NewsFeed[]{
+   return this.getRequest<NewsFeed[]>();
+  }
+}
+
+class NewsDetailApi extends Api{
+  getData(): newsDetail{
+    return this.getRequest<newsDetail>();
+   
+  }
+}
+
 
 function makeFeeds(feeds: NewsFeed[]) : NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
@@ -69,6 +91,7 @@ function updateView(html:string): void{
 
 // 메인화면
 function newsFeed() :void {
+  const api = new NewsFeedApi(NEWS_URL);
   let newsFeed : NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
@@ -96,8 +119,9 @@ function newsFeed() :void {
   </div>
   `;
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
+    newsFeed = store.feeds = makeFeeds(api.getData());
   }
+
   for (let i = (store.currentPage - 1) * 5; i < store.currentPage * 5; i++) {
     newsList.push(`
     <div class="p-6 ${
@@ -135,7 +159,8 @@ function newsFeed() :void {
 //목록
 function newsDetail():void {
   const id = location.hash.substr(7);
-  const newsContent = getData<newsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
+  const newsContent = api.getData();
   let template = `
   <div class="bg-gray-600 min-h-screen pb-8">
     <div class="bg-white text-xl">
