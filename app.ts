@@ -1,35 +1,34 @@
-type Store = {
+interface Store {
   currentPage : number;
   feeds: NewsFeed[];
 }
-
-type News = {
-  id:number;
-  time_ago:string;
-  title:string;
-  url:string;
-  user:string;
-  content:string;
+interface News  {
+  readonly id:number;
+  readonly time_ago:string;
+  readonly title:string;
+  readonly url:string;
+  readonly user:string;
+  readonly content:string;
 }
 
 //해당 뉴스에 대한 타입
 //& news type과 합쳐진다.
-type NewsFeed  = News & {
-  comments_count :number;
-  points:number;  
+interface NewsFeed extends News  {
+  readonly comments_count :number;
+  readonly points:number;  
   read?:boolean;
 }
 
 
 // 해당 뉴스를 클릭 한 후 내용에 대한 타입
-type newsDetail = News &{
+interface newsDetail extends News {
  
-  comments:NewsComment[];
+  readonly comments:NewsComment[];
 }
 
-type NewsComment = News & { 
-  comments:NewsComment[];
-  level:number;
+interface NewsComment extends News  { 
+  readonly comments:NewsComment[];
+  readonly level:number;
 }
 
 
