@@ -44,35 +44,44 @@ const store:Store = {
   feeds: [],
 };
 
+function apllyApiMixins(targetClass:any, baseClasses:any[]){
+  baseClasses.forEach(baseClass => {
+      Object.getOwnPropertyNames(baseClass.prototype).forEach(name =>{
+        const descriptor = Object.getOwnPropertyDescriptor(baseClass.prototype, name);
+
+        if(descriptor){
+          Object.defineProperty(targetClass.prototype,name,descriptor);
+        }
+      })
+  });
+}
+
 class Api {
-  url : string;  
-  ajax: XMLHttpRequest;
-  constructor(url: string){
-    this.url = url;
-    this.ajax = new XMLHttpRequest();
-  }
-
-  protected getRequest<ajaxResponse>(): ajaxResponse{
-    this.ajax.open("GET", this.url, false);
-    this.ajax.send();
+   getRequest<ajaxResponse>(ur:string): ajaxResponse{
+    const ajax = new XMLHttpRequest();
+    ajax.open("GET", url, false);
+    ajax.send();
   
-    return JSON.parse(this.ajax.response);
+    return JSON.parse(ajax.response);
   }
 }
 
-class NewsFeedApi extends Api{
+class NewsFeedApi{
   getData(): NewsFeed[]{
-   return this.getRequest<NewsFeed[]>();
+   return this.getRequest<NewsFeed[]>(NEWS_URL);
   }
 }
 
-class NewsDetailApi extends Api{
-  getData(): newsDetail{
-    return this.getRequest<newsDetail>();
+class NewsDetailApi{
+  getData(id: string): newsDetail{
+    return this.getRequest<newsDetail>(CONTENT_URL.replace('@id',id));
    
   }
 }
-
+interface NewsFeedApi extends Api{};
+interface NewsDetailApi extends Api{};
+apllyApiMixins(NewsFeedApi, [Api]);
+apllyApiMixins(NewsDetailApi, [Api]);
 
 function makeFeeds(feeds: NewsFeed[]) : NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
@@ -91,7 +100,7 @@ function updateView(html:string): void{
 
 // 메인화면
 function newsFeed() :void {
-  const api = new NewsFeedApi(NEWS_URL);
+  const api = new NewsFeedApi();
   let newsFeed : NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
@@ -159,8 +168,8 @@ function newsFeed() :void {
 //목록
 function newsDetail():void {
   const id = location.hash.substr(7);
-  const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
-  const newsContent = api.getData();
+  const api = new NewsDetailApi();
+  const newsDetail : newsDetail = api.getData(id);
   let template = `
   <div class="bg-gray-600 min-h-screen pb-8">
     <div class="bg-white text-xl">
@@ -179,9 +188,9 @@ function newsDetail():void {
     </div>
 
     <div class="h-full border rounded-xl bg-white m-6 p-4 ">
-      <h2>${newsContent.title}</h2>
+      <h2>${newsDetail.title}</h2>
       <div class="text-gray-400 h-20">
-        ${newsContent.content}
+        ${newsDetail.content}
       </div>
 
       {{__comments__}}
@@ -199,7 +208,7 @@ function newsDetail():void {
 
   updateView( template.replace(
     "{{__comments__}}",
-    makeComment(newsContent.comments)
+    makeComment(newsDetail.comments)
   ));
 
 }
